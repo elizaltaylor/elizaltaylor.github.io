@@ -16,49 +16,43 @@
       padding: 10px;
       align-items: center;
     }
-    .navbar a, .dropdown {
+    .navbar a {
       color: white;
       padding: 10px;
       text-decoration: none;
-      position: relative;
     }
-    .navbar a:hover, .dropdown:hover .dropbtn {
+    .navbar a:hover {
       background-color: #003f7f;
-    }
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      background-color: #0056b3;
-      min-width: 160px;
-      z-index: 1;
-    }
-    .dropdown:hover .dropdown-content {
-      display: block;
-    }
-    .dropdown-content .submenu {
-      display: none;
-      position: absolute;
-      left: 100%;
-      top: 0;
-    }
-    .dropdown-content div:hover .submenu {
-      display: block;
-    }
-    .dropdown-content a {
-      color: white;
-      padding: 8px 12px;
-      display: block;
-      text-decoration: none;
     }
     .content {
       padding: 20px;
     }
-    .image-space {
+    .data-page {
+      display: flex;
+    }
+    .date-list {
+      width: 200px;
+      background-color: #0069d9;
+      padding: 10px;
+      border-radius: 5px;
+      height: 80vh;
+      overflow-y: auto;
+    }
+    .date-list a {
+      display: block;
+      color: white;
+      text-decoration: none;
+      padding: 5px;
+    }
+    .date-list a:hover {
+      background-color: #0056b3;
+    }
+    .image-display {
+      flex-grow: 1;
+      margin-left: 20px;
       background: #3399ff;
       padding: 20px;
-      margin-top: 20px;
       border-radius: 10px;
-      text-align: center;
     }
     .nav-arrows {
       display: flex;
@@ -80,10 +74,7 @@
     <a href="#" onclick="loadContent('home')">Home</a>
     <a href="#" onclick="loadContent('gallery')">Gallery</a>
     <a href="#" onclick="loadContent('contact')">Contact</a>
-    <div class="dropdown">
-      <span class="dropbtn">Data ▼</span>
-      <div class="dropdown-content" id="yearMenu"></div>
-    </div>
+    <a href="#" onclick="loadDataPage()">Data</a>
   </div>
 
   <div class="content" id="mainContent">
@@ -91,87 +82,65 @@
     <div class="image-space">
       <p>Image area (add your images here)</p>
     </div>
-    <div class="nav-arrows">
-      <button onclick="changeDay(-1)">← Previous</button>
-      <button onclick="changeDay(1)">Next →</button>
-    </div>
   </div>
 
   <script>
     let currentDate = new Date();
+    let availableDates = [];
 
     function loadContent(page) {
-      let content = document.getElementById('mainContent');
-      if (page === 'home') {
-        content.innerHTML = `
-          <h1>Welcome to the Blue Homepage</h1>
-          <div class="image-space"><p>Image area (add your images here)</p></div>
-          <div class="nav-arrows">
-            <button onclick="changeDay(-1)">← Previous</button>
-            <button onclick="changeDay(1)">Next →</button>
-          </div>`;
-      } else {
-        content.innerHTML = `<h1>${page.charAt(0).toUpperCase() + page.slice(1)}</h1><p>Content for ${page}</p>`;
-      }
+      const content = document.getElementById('mainContent');
+      content.innerHTML = `<h1>${page.charAt(0).toUpperCase() + page.slice(1)}</h1><p>Content for ${page}</p>`;
     }
 
     function formatDate(date) {
       return date.toISOString().split('T')[0];
     }
 
-    function changeDay(offset) {
-      currentDate.setDate(currentDate.getDate() + offset);
-      showDateContent(currentDate);
-    }
-
-    function showDateContent(date) {
+    function loadDataPage() {
       const content = document.getElementById('mainContent');
+      let startDate = new Date(2023, 0, 1);
+      let endDate = new Date(2025, 11, 31);
+      availableDates = [];
+
+      while (startDate <= endDate) {
+        availableDates.push(new Date(startDate));
+        startDate.setDate(startDate.getDate() + 1);
+      }
+
+      let dateLinks = availableDates.map(date => {
+        const dateStr = formatDate(date);
+        return `<a href="#" onclick="selectDate('${dateStr}')">${dateStr}</a>`;
+      }).join('');
+
       content.innerHTML = `
-        <h1>Data for ${formatDate(date)}</h1>
-        <div class="image-space"><p>Images for ${formatDate(date)}</p></div>
-        <div class="nav-arrows">
-          <button onclick="changeDay(-1)">← Previous</button>
-          <button onclick="changeDay(1)">Next →</button>
+        <div class="data-page">
+          <div class="date-list">
+            ${dateLinks}
+          </div>
+          <div class="image-display" id="imageDisplay">
+            <p>Select a date to view image</p>
+          </div>
         </div>`;
     }
 
-    function buildDateMenu() {
-      const yearMenu = document.getElementById('yearMenu');
-      for (let year = 2023; year <= 2025; year++) {
-        const yearDiv = document.createElement('div');
-        yearDiv.textContent = year;
-        const monthMenu = document.createElement('div');
-        monthMenu.className = 'submenu';
-
-        for (let month = 0; month < 12; month++) {
-          const monthDiv = document.createElement('div');
-          const monthName = new Date(year, month).toLocaleString('default', { month: 'long' });
-          monthDiv.textContent = monthName;
-
-          const dateMenu = document.createElement('div');
-          dateMenu.className = 'submenu';
-          const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-          for (let day = 1; day <= daysInMonth; day++) {
-            const dateLink = document.createElement('a');
-            dateLink.href = '#';
-            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            dateLink.textContent = day;
-            dateLink.onclick = () => {
-              currentDate = new Date(dateStr);
-              showDateContent(currentDate);
-            };
-            dateMenu.appendChild(dateLink);
-          }
-          monthDiv.appendChild(dateMenu);
-          monthMenu.appendChild(monthDiv);
-        }
-        yearDiv.appendChild(monthMenu);
-        yearMenu.appendChild(yearDiv);
-      }
+    function selectDate(dateStr) {
+      currentDate = new Date(dateStr);
+      const imageDisplay = document.getElementById('imageDisplay');
+      imageDisplay.innerHTML = `
+        <h2>Image for ${dateStr}</h2>
+        <div><img src="https://via.placeholder.com/400x300?text=${dateStr}" alt="Image for ${dateStr}" /></div>
+        <div class="nav-arrows">
+          <button onclick="changeImageDay(-1)">← Previous</button>
+          <button onclick="changeImageDay(1)">Next →</button>
+        </div>`;
     }
 
-    buildDateMenu();
+    function changeImageDay(offset) {
+      currentDate.setDate(currentDate.getDate() + offset);
+      const dateStr = formatDate(currentDate);
+      selectDate(dateStr);
+    }
   </script>
 </body>
 </html>
